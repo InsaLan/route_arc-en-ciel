@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+
+from json import loads as json_loads
+
+# The commands
+IFACE_ROUTE     = "enp4s0f1.{}"
+DEFAULT_ROUTE   = "ip route add default via {} table {}"
+VLAN_ROUTE      = "ip route add {} dev {} proto kernel scope link src {} table {}"
+VPN_ROUTE       = "ip route add {}/24 dev tun{} proto kernel scope link src {} table {}"
+
+# The colours
+RED = "\033[1;31m"
+NC  = "\033[0m"
+
+def main():
+    try:
+        data = json_loads(open("config.json", "r").read())
+    except Exception as err:
+        print("echo '" + RED + "\"config.json\" could not be read : {}'".format(str(err).replace("'", "")) + NC)
+        return
+
+    # Add the default routes
+    for table_name in data["vpn"]:
+        subnet = data["vpn"][table_name]
+        print(DEFAULT_ROUTE.format(subnet[:-1] + "1", table_name))
+
+    # Add a route coming from every VLAN to the routers
+    for table_name in data["vpn"]:
+        subnet = data["vpn"][table_name]
+        for vnumber in data["vlan"]:
+            v_sub = data["vlan"][vnumber]
+            iface = IFACE_ROUTE.format(vnumber)
+            print(VLAN_ROUTE.format(v_sub[:-1] + "0/24", iface, v_sub[:-1] + "1", table_name))
+        print(VPN_ROUTE.format(
+            subnet[:-1] + "0",
+            table_name[3:],
+            subnet[:-1] + "2",
+            table_name))
+
+if __name__ == "__main__":
+    main()
