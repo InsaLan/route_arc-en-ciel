@@ -1,9 +1,8 @@
 {
 	"vlan": {
-	
 	},
 	"vpn": {
-	
-	}
+	},
+	"iface_prefix": "eth0"
 }
 
